@@ -6,17 +6,17 @@ module.exports = () => {
         .setColor("#00FF99")
         .setDescription(
             "**Selamat datang di SYRBLOX!**\n\n" +
-            "Klik tombol **ORDER** di bawah untuk memulai pembelian Robux.\n\n" +
-            "📌 Proses cepat & otomatis\n" +
-            "📌 Via login\n" +
-            "📌 Aman & terpercaya"
+            "Klik tombol **BELI ROBUX** di bawah untuk memulai pembelian robux.\n\n" +
+            "<:657267verified:1452335402605347056> Proses cepat 1-15 menit.\n" +
+            "<:657267verified:1452335402605347056> Via login\n" +
+            "<:657267verified:1452335402605347056> Aman & terpercaya"
         )
-        .setFooter({ text: "SYRBLOX Official" });
+        .setFooter({ text: "SYRBLOX OFFICIAL " });
 
     const button = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId("order_start")
-            .setLabel("ORDER")
+            .setLabel("🛒 BELI ROBUX !")
             .setStyle(ButtonStyle.Success)
     );
 

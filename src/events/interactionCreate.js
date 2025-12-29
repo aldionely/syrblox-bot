@@ -39,7 +39,7 @@ module.exports = {
 
             const menu = new StringSelectMenuBuilder()
                 .setCustomId("select_product")
-                .setPlaceholder("Pilih produk")
+                .setPlaceholder("Pilih jumlah robux")
                 .addOptions(products.map(p => ({
                     label: `${p.jumlah} Robux`,
                     description: `Rp ${formatRupiah(p.harga)}`,
@@ -100,18 +100,18 @@ module.exports = {
 
             /* ORDER EMBED */
             const orderEmbed = new EmbedBuilder()
-                .setTitle("📦 ORDER BARU — SYRBLOX")
+                .setTitle("<:704309pendingids:1455185884549746872> ORDER BARU — SYRBLOX")
                 .setColor("#FFD700")
                 .setDescription(
-                    `👤 **User:** <@${interaction.user.id}>\n` +
-                    `🆔 **ID Produk:** ${product.id}\n` +
-                    `💎 **Jumlah:** ${product.jumlah} Robux\n` +
-                    `💰 **Harga:** Rp ${formatRupiah(product.harga)}\n` +
-                    `💳 **Metode Bayar:** ${paymentData.label}\n\n` +
+                    `**◆ User:** <@${interaction.user.id}>\n` +
+                    `**◆ ID Produk:** ${product.id}\n` +
+                    `**◆ Jumlah:** ${product.jumlah} Robux\n` +
+                    `**◆ Harga:** Rp ${formatRupiah(product.harga)}\n` +
+                    `**◆ Metode Bayar:** ${paymentData.label}\n\n` +
                     `📌 **Status Payment:** \`MENUNGGU\`\n` +
                     `📦 **Status Order:** \`MENUNGGU\``
                 )
-                .setFooter({ text: "SYRBLOX Order System" });
+                .setFooter({ text: "© SYRBLOX Order System" });
 
             /* PAYMENT EMBED */
             const paymentEmbed = new EmbedBuilder()
@@ -120,25 +120,25 @@ module.exports = {
 
 if (paymentData.type === "ewallet") {
     paymentEmbed.setDescription(
-        `**Metode:** ${paymentData.label}\n` +
-        `**Nomor:** ${paymentData.number}\n` +
-        `**Atas Nama:** ${paymentData.name}`
+        `**METODE :** ${paymentData.label}\n` +
+        `**NOMOR :** ${paymentData.number}\n` +
+        `**NAMA :** ${paymentData.name}`
     );
 }
 
 if (paymentData.type === "bank") {
     paymentEmbed.setDescription(
-        `**Bank:** ${paymentData.bank}\n` +
-        `**No Rek:** ${paymentData.number}\n` +
-        `**Atas Nama:** ${paymentData.name}`
+        `**BANK :** ${paymentData.bank}\n` +
+        `**NAMA :** ${paymentData.name}\n` +
+        `**NO REK :** \`\`\`css\n${paymentData.number}\n\`\`\`\n`
     );
 }
 
 if (paymentData.type === "qris") {
     paymentEmbed
         .setDescription(
-            `**Metode:** QRIS\n` +
-            `**Atas Nama:** ${paymentData.name}\n\n` +
+            `**METODE :** QRIS\n` +
+            `**NAMA :** ${paymentData.name}\n\n` +
             `Silakan scan QR di bawah ini`
         )
         .setImage(paymentData.image);
@@ -146,7 +146,7 @@ if (paymentData.type === "qris") {
             const uploadRow = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId("upload_bukti")
-                    .setLabel("🧾 Kirim Bukti Pembayaran")
+                    .setLabel("➡ Sudah bayar? klik disini. ⬅")
                     .setStyle(ButtonStyle.Primary)
             );
 
@@ -159,7 +159,7 @@ if (paymentData.type === "qris") {
             });
 
             return interaction.update({
-                content: `✅ Ticket dibuat: ${ticket}`,
+                content: `<:85618verified:1455185880330539173> order dibuat: ${ticket}`,
                 components: [],
                 ephemeral: true
             });
@@ -171,7 +171,7 @@ if (paymentData.type === "qris") {
             interaction.client.waitingUpload.add(interaction.channel.id);
             return interaction.reply({
                 ephemeral: true,
-                content: "Kirim **1 gambar bukti pembayaran (JPG / PNG)**."
+                content: "silahkan upload **bukti pembayaran** di channel ini\n (kirim sekali aja)."
             });
         }
 
@@ -202,7 +202,7 @@ if (paymentData.type === "qris") {
             }
 
             const confirmEmbed = new EmbedBuilder()
-                .setTitle("✅ PEMBAYARAN DITERIMA")
+                .setTitle("<:157030approvedids:1455185882851315795> PEMBAYARAN DITERIMA")
                 .setColor("#00FF88")
                 .setDescription(
                     "Pembayaran telah diterima.\n" +
@@ -212,7 +212,7 @@ if (paymentData.type === "qris") {
             const loginRow = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId("fill_roblox_login")
-                    .setLabel("🔐 Isi Data Login Roblox")
+                    .setLabel("🔐 Isi Data Login")
                     .setStyle(ButtonStyle.Primary)
             );
 
@@ -285,8 +285,8 @@ if (paymentData.type === "qris") {
                     `👤 **User:** <@${interaction.user.id}>\n` +
                     `📍 **Ticket:** ${interaction.channel}\n\n` +
                     `${orderMsg.embeds[0].data.description}\n\n` +
-                    `**Username Roblox:** \`${username}\`\n` +
-                    `**Password Roblox:** \`${password}\``
+                    `**Email:** \`${username}\`\n` +
+                    `**Pw Roblox:** \`${password}\``
                 );
 
             const finishRow = new ActionRowBuilder().addComponents(
@@ -300,10 +300,10 @@ if (paymentData.type === "qris") {
 
             await interaction.reply({
                 ephemeral: true,
-                content: "✅ Data login dikirim ke admin."
+                content: "<:verif1:1452333754075840806> Data login berhasil di kirim ke admin."
             });
             
-            await interaction.channel.send("📦 **Order sedang diproses oleh admin.**");
+            await interaction.channel.send("<a:88094loading:1455195433516269589> **Robux sedang diproses oleh admin.**");
         }
 
         /* ================= FINISH ORDER ================= */
@@ -365,9 +365,11 @@ if (interaction.isButton() && interaction.customId.startsWith("order_finish")) {
 
     /* EMBED ORDER SELESAI */
     await ticket.send({
+        content:
+        `<@${buyerOverwrite.id}>`,
         embeds: [
             new EmbedBuilder()
-                .setTitle("🎉 ORDER SELESAI — SYRBLOX")
+                .setTitle("<:85618verified:1455185880330539173> ORDER SELESAI — SYRBLOX")
                 .setColor("#00FF88")
                 .setDescription(
                     "Order telah selesai.\n" +

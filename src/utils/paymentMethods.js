@@ -2,13 +2,13 @@ module.exports = {
     Dana: {
         label: "DANA",
         type: "ewallet",
-        number: "0822-6771-9199",
+        number: "0822 6771 9199",
         name: "ASYERA DHARMA"
     },
     OVO: {
         label: "OVO",
         type: "ewallet",
-        number: "0822-6771-9199",
+        number: "0822 6771 9199",
         name: "ASYERA DHARMA"
     },
     
@@ -23,7 +23,7 @@ module.exports = {
         label: "BCA",
         type: "bank",
         bank: "BCA",
-        number: "8801253008",
+        number: "88 0125 3008",
         name: "ASYERA DHARMA"
     }
 };

@@ -10,11 +10,5 @@
     "jumlah": 200,
     "harga": 20000,
     "status": "open"
-  },
-  {
-    "id": "RBX1000",
-    "jumlah": 1000,
-    "harga": 25000,
-    "status": "close"
   }
 ]

@@ -46,7 +46,7 @@ module.exports = {
             await log.send({ embeds: [embed], components: [row] });
             client.waitingUpload.delete(message.channel.id);
 
-            return message.reply("✅ Bukti pembayaran dikirim.");
+            return message.reply("<:verif1:1452333754075840806> Bukti pembayaran diterima dan sedang di cek, tunggu sebentar.");
         }
 
         if (!message.content.startsWith(config.prefix)) return;

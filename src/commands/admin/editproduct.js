@@ -4,7 +4,7 @@ const config = require("../../config");
 const updatePricelist = require("../../utils/updatePricelist");
 
 module.exports = {
-    name: "editproduct",
+    name: "edit",
     async execute(message, args) {
         if (!config.adminIds.includes(message.author.id)) return;
 
