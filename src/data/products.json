@@ -3,12 +3,24 @@
     "id": "RBX100",
     "jumlah": 100,
     "harga": 15000,
-    "status": "open"
+    "status": "close"
   },
   {
     "id": "RBX200",
     "jumlah": 200,
     "harga": 20000,
+    "status": "open"
+  },
+  {
+    "id": "RBX300",
+    "jumlah": 300,
+    "harga": 50000,
+    "status": "open"
+  },
+  {
+    "id": "RBX500",
+    "jumlah": 500,
+    "harga": 74000,
     "status": "open"
   }
 ]
