@@ -1,7 +1,6 @@
-const fs = require("fs");
-const path = require("path");
 const config = require("../../config");
 const updatePricelist = require("../../utils/updatePricelist");
+const db = require("../../database/db");
 
 module.exports = {
     name: "add",
@@ -12,22 +11,20 @@ module.exports = {
         if (!id || !jumlah || !harga)
             return message.reply("Format: !addproduct <ID> <JUMLAH> <HARGA>");
 
-        const filePath = path.join(__dirname, "../../data/products.json");
-        const products = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        // Cek ID di database
+        const exists = db.prepare("SELECT id FROM products WHERE id = ?").get(id);
+        if (exists) return message.reply("❌ ID produk sudah ada.");
 
-        if (products.find(p => p.id === id))
-            return message.reply("❌ ID produk sudah ada.");
-
-        products.push({
-            id,
-            jumlah: Number(jumlah),
-            harga: Number(harga),
-            status: "open"
-        });
-
-        fs.writeFileSync(filePath, JSON.stringify(products, null, 2));
-
-        await updatePricelist(message.guild);
-        message.reply("✅ Produk berhasil ditambahkan.");
+        try {
+            // Masukkan ke database
+            db.prepare("INSERT INTO products (id, jumlah, harga, status) VALUES (?, ?, ?, 'open')")
+              .run(id, Number(jumlah), Number(harga));
+            
+            await updatePricelist(message.guild);
+            message.reply("✅ Produk berhasil ditambahkan.");
+        } catch (err) {
+            console.error(err);
+            message.reply("❌ Gagal menyimpan ke database.");
+        }
     }
 };

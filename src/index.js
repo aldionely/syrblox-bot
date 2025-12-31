@@ -1,6 +1,9 @@
 require("dotenv").config();
 const { Client, GatewayIntentBits, Collection } = require("discord.js");
 
+// Load Init Database
+const initDatabase = require("./database/init");
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -9,12 +12,19 @@ const client = new Client({
     ]
 });
 
-// Tempat simpan command
-client.commands = new Collection();
+// Setup Collection
+client.commands = new Collection();       // Untuk Prefix Command (!)
+client.slashCommands = new Collection();  // Untuk Slash Command (/)
+client.interactions = new Collection();   // Untuk Button/Modal
+client.waitingUpload = new Set();
 
-// Load handler
-require("./handlers/commandHandler")(client);
-require("./handlers/eventHandler")(client);
+// Jalankan Database
+initDatabase();
 
-// Login bot
+// Load SEMUA Handler
+require("./handlers/commandHandler")(client);     // Handle !
+require("./handlers/slashHandler")(client);       // Handle / (BARU)
+require("./handlers/interactionHandler")(client); // Handle Button
+require("./handlers/eventHandler")(client);       // Handle Event
+
 client.login(process.env.BOT_TOKEN);

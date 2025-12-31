@@ -1,12 +1,10 @@
-const fs = require("fs");
-const path = require("path");
 const { EmbedBuilder } = require("discord.js");
+const db = require("../database/db");
 
 module.exports = () => {
-    const filePath = path.join(__dirname, "../data/products.json");
-    const products = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-    const formatRupiah = (n) =>
-    new Intl.NumberFormat("id-ID").format(n);
+    // Ambil semua produk, urutkan dari harga termurah
+    const products = db.prepare("SELECT * FROM products ORDER BY harga ASC").all();
+    const formatRupiah = (n) => new Intl.NumberFormat("id-ID").format(n);
 
     const embed = new EmbedBuilder()
         .setTitle("<:Robux3:1452336572904243291> SYRBLOX — PRICELIST VIA LOGIN")
@@ -22,7 +20,7 @@ module.exports = () => {
         products.map(p =>
             `**ID** : ${p.id}\n` +
             `**Jumlah** : ${p.jumlah} <:robux2:1452335891950604330>\n` +
-            `**Harga**  : Rp ${formatRupiah(p.harga)}\n` +
+            `**Harga** : Rp ${formatRupiah(p.harga)}\n` +
             `**Status** : ${p.status.toUpperCase()}`
         ).join("\n**—————————————————**\n")
     );

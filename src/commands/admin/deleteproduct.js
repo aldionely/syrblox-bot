@@ -1,7 +1,6 @@
-const fs = require("fs");
-const path = require("path");
 const config = require("../../config");
 const updatePricelist = require("../../utils/updatePricelist");
+const db = require("../../database/db");
 
 module.exports = {
     name: "del",
@@ -9,17 +8,11 @@ module.exports = {
         if (!config.adminIds.includes(message.author.id)) return;
 
         const [id] = args;
-        if (!id)
-            return message.reply("Format: !deleteproduct <ID>");
+        if (!id) return message.reply("Format: !deleteproduct <ID>");
 
-        const filePath = path.join(__dirname, "../../data/products.json");
-        let products = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        const result = db.prepare("DELETE FROM products WHERE id = ?").run(id);
 
-        const exists = products.some(p => p.id === id);
-        if (!exists) return message.reply("❌ Produk tidak ditemukan.");
-
-        products = products.filter(p => p.id !== id);
-        fs.writeFileSync(filePath, JSON.stringify(products, null, 2));
+        if (result.changes === 0) return message.reply("❌ Produk tidak ditemukan.");
 
         await updatePricelist(message.guild);
         message.reply("🗑️ Produk berhasil dihapus.");

@@ -1,8 +1,6 @@
-const fs = require("fs");
-const path = require("path");
+const db = require("../database/db");
 
 module.exports = () => {
-    const filePath = path.join(__dirname, "../data/products.json");
-    const products = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-    return products.filter(p => p.status === "open");
+    // Ambil semua produk yang statusnya 'open' langsung dari DB
+    return db.prepare("SELECT * FROM products WHERE status = 'open'").all();
 };

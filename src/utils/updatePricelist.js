@@ -1,31 +1,34 @@
-const fs = require("fs");
-const path = require("path");
 const config = require("../config");
 const createEmbed = require("./pricelistEmbed");
+const db = require("../database/db");
 
 module.exports = async (guild) => {
-    const channel = guild.channels.cache.get(config.channels.pricelist);
+    // Ambil Channel ID khusus untuk server ini
+    const channelId = config.getChannel(guild.id, "pricelist");
+    if (!channelId) return; 
+
+    const channel = guild.channels.cache.get(channelId);
     if (!channel) return;
 
-    const msgFile = path.join(__dirname, "../data/pricelistMessage.json");
-    const data = JSON.parse(fs.readFileSync(msgFile, "utf-8"));
+    // Ambil Message ID khusus untuk server ini
+    const row = db.prepare("SELECT value FROM configs WHERE guild_id = ? AND key = 'pricelist_message_id'").get(guild.id);
+    let messageId = row ? row.value : null;
 
-    // Jika embed belum pernah dikirim
-    if (!data.messageId) {
+    const saveId = (id) => {
+        db.prepare("INSERT OR REPLACE INTO configs (guild_id, key, value) VALUES (?, 'pricelist_message_id', ?)").run(guild.id, id);
+    };
+
+    if (!messageId) {
         const msg = await channel.send({ embeds: [createEmbed()] });
-        data.messageId = msg.id;
-        fs.writeFileSync(msgFile, JSON.stringify(data, null, 2));
+        saveId(msg.id);
         return;
     }
 
-    // Update embed lama
     try {
-        const msg = await channel.messages.fetch(data.messageId);
+        const msg = await channel.messages.fetch(messageId);
         await msg.edit({ embeds: [createEmbed()] });
     } catch {
-        // Kalau message hilang
         const msg = await channel.send({ embeds: [createEmbed()] });
-        data.messageId = msg.id;
-        fs.writeFileSync(msgFile, JSON.stringify(data, null, 2));
+        saveId(msg.id);
     }
 };
