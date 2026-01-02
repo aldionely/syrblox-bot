@@ -10,7 +10,7 @@ module.exports = {
 
         await interaction.deferUpdate();
 
-        // 1. Update Log Message
+        // 1. Update Log Message (Di Channel Log)
         try {
             const logEmbed = EmbedBuilder.from(interaction.message.embeds[0]);
             logEmbed.setDescription(
@@ -26,8 +26,40 @@ module.exports = {
         const ticket = interaction.guild.channels.cache.get(ticketId);
         if (!ticket) return;
 
-        // 3. Ambil Info Order
+        // 3. Ambil Pesan-pesan di Ticket
         const messages = await ticket.messages.fetch({ limit: 50 });
+
+        // --- FUNGSI HELPER: Bikin Tombol Jadi Disable ---
+        const disableComponents = (msg) => {
+            if (!msg.components.length) return [];
+            return msg.components.map(row => {
+                const newRow = ActionRowBuilder.from(row);
+                // Ubah setiap tombol di dalam baris menjadi disabled
+                const newBtns = newRow.components.map(btn => ButtonBuilder.from(btn).setDisabled(true));
+                newRow.setComponents(newBtns);
+                return newRow;
+            });
+        };
+
+        // A. HAPUS Pesan Loading (Jika ada)
+        const loadingMsg = messages.find(m => m.content && m.content.includes("Robux sedang diproses oleh admin"));
+        if (loadingMsg) {
+            try { await loadingMsg.delete(); } catch (e) {}
+        }
+
+        // B. DISABLE Tombol "Isi Data Login"
+        // Kita cari pesan yang punya tombol dengan ID 'fill_roblox_login'
+        const loginMsg = messages.find(m => 
+            m.components.length > 0 && 
+            m.components[0].components.some(c => c.customId === 'fill_roblox_login')
+        );
+        if (loginMsg) {
+            try {
+                await loginMsg.edit({ components: disableComponents(loginMsg) });
+            } catch (e) { console.log("Gagal disable tombol login:", e.message); }
+        }
+
+        // C. DISABLE Tombol "Sudah Bayar?" (Order Msg) & UPDATE Status Embed
         const orderMsg = messages.find(m => m.embeds.length && m.embeds[0].title && m.embeds[0].title.includes("ORDER BARU"));
 
         let jumlahRobux = "Sekian";
@@ -39,7 +71,12 @@ module.exports = {
             desc = desc.replace("`DALAM PROSES`", "`SELESAI`");
             desc = desc.replace("`MENUNGGU`", "`SELESAI`"); 
             updated.setDescription(desc);
-            await orderMsg.edit({ embeds: [updated] });
+            
+            // Simpan Embed Baru + Disable Tombol "Sudah Bayar?"
+            await orderMsg.edit({ 
+                embeds: [updated], 
+                components: disableComponents(orderMsg) // <-- Tombol jadi mati
+            });
 
             const matchRobux = desc.match(/\*\*◆ Jumlah:\*\* (.+?) Robux/);
             if (matchRobux) jumlahRobux = matchRobux[1];
@@ -89,11 +126,11 @@ module.exports = {
             .setTitle("<:85618verified:1455185880330539173> ORDER SELESAI — SYRBLOX")
             .setColor("#00FF88")
             .setDescription(
-                `Halo ${buyerMention}, robux kamu dengan jumlah ${jumlahRobux} udah berhasil dikirim!\n\n` +
-                `segera cek akunmu ya!\n\n` +
-                `**NOTE**\n` +
-                `Ticket akan dihapus otomatis dalam **7 hari**.\n` +
-                `semua data login kamu juga akan di hapus dari sistem kami demi keamanan kamu.\n` +
+                `Halo ${buyerMention}, robux dengan jumlah ${jumlahRobux} udah berhasil kami kirim!\n\n` +
+                `segera cek akun kamu ya!\n\n` +
+                `**NOTE**\n\n` +
+                `◆ Ticket order ini akan dihapus otomatis dalam **7 hari**.\n\n` +
+                `◆ semua data login kamu juga akan di hapus dari sistem kami demi keamanan kamu.\n\n` +
                 `**jika berkenan isi testimoni dengan klik tombol di bawah ya!** 👇\n`
             )
             .setFooter({ text: "SYRBLOX OFFICAL" });

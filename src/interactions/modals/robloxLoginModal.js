@@ -41,7 +41,7 @@ module.exports = {
             ephemeral: true,
             content: "<:verif1:1452333754075840806> Data login berhasil di kirim ke admin, tunggu sebentar ya."
         });
-        
-        await interaction.channel.send("<a:88094loading:1455195433516269589> **Robux sedang diproses oleh admin.**");
+
+        await interaction.channel.send("<a:88094loading:1455195433516269589> **tunggu ya, robux sedang di proses tinggalin aja nanti aku kasih info lagi kalo udah beres**");
     }
 };

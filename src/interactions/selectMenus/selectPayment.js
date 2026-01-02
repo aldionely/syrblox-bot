@@ -19,16 +19,28 @@ module.exports = {
         
         if (!product) return interaction.reply({ content: "Produk error/hilang dari database.", ephemeral: true });
 
-        // --- UPDATE PENTING DI SINI ---
         // Ambil Kategori ID dari database
         const categoryId = config.categories.getTicket(interaction.guild.id);
         
+        // Validasi: Pastikan admin sudah setup kategori ticket
+        if (!categoryId) {
+            return interaction.reply({ 
+                content: "❌ **Sistem Error:** Admin belum melakukan `/setup tipe:Kategori Ticket`. Mohon hubungi admin.", 
+                ephemeral: true 
+            });
+        }
+        
+        // --- [BAGIAN INI YANG DIUBAH] ---
+        // Membuat nama ticket: order-rbx + 4 angka acak
+        const randomNum = Math.floor(1000 + Math.random() * 9000); // Menghasilkan angka antara 1000 - 9999
+        const ticketName = `order-rbx${randomNum}`; 
+        // --------------------------------
+
         // Buat Ticket
-        const ticketName = `order-${interaction.user.username}`.toLowerCase().replace(/[^a-z0-9]/g, '');
         const ticket = await interaction.guild.channels.create({
             name: ticketName,
             type: ChannelType.GuildText,
-            parent: categoryId, // <--- PAKAI ID DINAMIS
+            parent: categoryId, 
             permissionOverwrites: [
                 { id: interaction.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
                 {
@@ -59,7 +71,7 @@ module.exports = {
         if (paymentData.type === "ewallet") {
             paymentEmbed.setDescription(`**METODE :** ${paymentData.label}\n**NOMOR :** ${paymentData.number}\n**NAMA :** ${paymentData.name}`);
         } else if (paymentData.type === "bank") {
-            paymentEmbed.setDescription(`**BANK :** ${paymentData.bank}\n**NAMA :** ${paymentData.name}\n**NO REK :** \`\`\`css\n${paymentData.number}\n\`\`\``);
+            paymentEmbed.setDescription(`**BANK :** ${paymentData.bank}\n**NAMA :** ${paymentData.name}\n**NO REK :** \`\`\`css\n${paymentData.number}\n\`\`\`\n\n silahkan transfer sesuai nominal dan rekening di atas.`);
         } else if (paymentData.type === "qris") {
             paymentEmbed.setDescription(`**METODE :** QRIS\n**NAMA :** ${paymentData.name}\n\nSilakan scan QR di bawah ini`).setImage(paymentData.image);
         }
@@ -78,7 +90,7 @@ module.exports = {
         });
 
         return interaction.update({
-            content: `<:85618verified:1455185880330539173> Order dibuat: ${ticket}`,
+            content: `<a:6521verificationicon:1456639259787133202> Order dibuat, lanjut kesini buat pembayaran: ${ticket}`,
             components: [],
             ephemeral: true
         });

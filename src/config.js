@@ -4,6 +4,7 @@ const db = require("./database/db");
 const getConfig = (guildId, key) => {
     try {
         if (!guildId) return null;
+        // Ambil data, jika tidak ada return null
         const row = db.prepare("SELECT value FROM configs WHERE guild_id = ? AND key = ?").get(guildId, key);
         return row ? row.value : null;
     } catch (e) {
@@ -20,13 +21,13 @@ module.exports = {
         "1191725638156025919"
     ],
     
-    // Fungsi umum untuk ambil config
     getChannel: (guildId, type) => {
         return getConfig(guildId, type);
     },
 
-    // KITA UBAH BAGIAN INI JADI DINAMIS
     categories: {
-        getTicket: (guildId) => getConfig(guildId, "ticketCategory") || "1451162050762899530" // Fallback ke ID lama jika belum disetup
+        // PERBAIKAN: Hapus "|| 145..." (Hardcode). 
+        // Biarkan null jika belum disetup, agar kita tahu itu error.
+        getTicket: (guildId) => getConfig(guildId, "ticketCategory") 
     }
 };

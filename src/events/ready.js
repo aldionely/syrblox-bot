@@ -2,13 +2,13 @@ const updatePricelist = require("../utils/updatePricelist");
 const updateOrder = require("../utils/updateOrder");
 
 module.exports = {
-    name: "ready",
+    name: "clientReady",
     once: true,
-    async execute(client) {
-        console.log(`🤖 SYRBLOX online sebagai ${client.user.tag}`);
+    async execute(clientReady) {
+        console.log(`🤖 SYRBLOX online sebagai ${clientReady.user.tag}`);
 
         // Loop ke semua server saat bot nyala untuk update embed
-        for (const [id, guild] of client.guilds.cache) {
+        for (const [id, guild] of clientReady.guilds.cache) {
             try {
                 await updatePricelist(guild);
                 await updateOrder(guild);
