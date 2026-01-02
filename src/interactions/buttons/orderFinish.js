@@ -57,7 +57,7 @@ module.exports = {
                     .setTitle("🎉 PEMBELIAN BERHASIL")
                     .setColor("#00FF88")
                     .setDescription(
-                        `User <@${buyerId}> telah sukses melakukan pembelian **${jumlahRobux} Robux**!\n` +
+                        `<@${buyerId}> telah sukses melakukan pembelian **${jumlahRobux} Robux**!\n` +
                         `Terima kasih sudah berbelanja di SYRBLOX.`
                     )
                     .setTimestamp();
@@ -80,7 +80,7 @@ module.exports = {
         const testimoniRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId("testimoni_start")
-                .setLabel("⭐ Berikan Testimoni")
+                .setLabel("Berikan Testimoni")
                 .setStyle(ButtonStyle.Success)
                 .setEmoji("✍️")
         );
@@ -89,16 +89,17 @@ module.exports = {
             .setTitle("<:85618verified:1455185880330539173> ORDER SELESAI — SYRBLOX")
             .setColor("#00FF88")
             .setDescription(
-                `Halo ${buyerMention}, pesanan kamu telah berhasil dikirim!\n\n` +
-                `📦 **Item:** ${jumlahRobux} Robux\n` +
-                `✅ **Status:** Selesai / Success\n\n` +
-                `**Mohon isi testimoni dengan klik tombol di bawah ya!** 👇\n` +
-                `Ticket akan dihapus otomatis dalam **7 hari**.`
+                `Halo ${buyerMention}, robux kamu dengan jumlah ${jumlahRobux} udah berhasil dikirim!\n\n` +
+                `segera cek akunmu ya!\n\n` +
+                `**NOTE**\n` +
+                `Ticket akan dihapus otomatis dalam **7 hari**.\n` +
+                `semua data login kamu juga akan di hapus dari sistem kami demi keamanan kamu.\n` +
+                `**jika berkenan isi testimoni dengan klik tombol di bawah ya!** 👇\n`
             )
-            .setFooter({ text: "Terima kasih telah belanja di SYRBLOX!" });
+            .setFooter({ text: "SYRBLOX OFFICAL" });
 
         await ticket.send({
-            content: buyerMention ? `Hore! ${buyerMention} pesananmu selesai!` : "Order Selesai!",
+            content: buyerMention ? `Hore! ${buyerMention} pesananmu udah selesai!` : "Order Selesai!",
             embeds: [finishEmbed],
             components: [testimoniRow]
         });

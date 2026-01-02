@@ -24,13 +24,13 @@ module.exports = {
         const star = "⭐".repeat(Math.min(ratingNum, 10)); 
 
         const embed = new EmbedBuilder()
-            .setTitle(`TESTIMONI DARI @${interaction.user.username.toUpperCase()}`)
+            .setTitle(`TESTIMONI DARI ${interaction.user.username.toUpperCase()}`)
             .setColor("#FFD700") 
             .setThumbnail(interaction.user.displayAvatarURL())
             .setDescription(
-                `👤 **User:** <@${interaction.user.id}>\n` +
-                `💬 **Kata Mereka:**\n"${pesan}"\n\n` +
-                `⭐ **Rating:** ${rating}/10\n${star}`
+                // `👤 **User:** <@${interaction.user.id}>\n` +
+                `💬 **Feedback:**\n"${pesan}"\n\n` +
+                `✨ **Rating:** ${rating}/10\n${star}`
             )
             .setFooter({ text: "Terima kasih atas kepercayaannya!" })
             .setTimestamp();

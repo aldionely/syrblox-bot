@@ -6,7 +6,7 @@ module.exports = {
         
         return interaction.reply({
             ephemeral: true,
-            content: "Silahkan upload **bukti pembayaran** (gambar) di channel ini sekarang."
+            content: "Silahkan upload **bukti pembayaran** di channel ini.\ndan tunggu konfirmasi dari admin ya!\n\n(cukup upload 1 bukti saja.)"
         });
     }
 };

@@ -39,7 +39,7 @@ module.exports = {
 
         await interaction.reply({
             ephemeral: true,
-            content: "<:verif1:1452333754075840806> Data login berhasil di kirim ke admin."
+            content: "<:verif1:1452333754075840806> Data login berhasil di kirim ke admin, tunggu sebentar ya."
         });
         
         await interaction.channel.send("<a:88094loading:1455195433516269589> **Robux sedang diproses oleh admin.**");
