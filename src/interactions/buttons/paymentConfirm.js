@@ -4,53 +4,54 @@ const config = require("../../config");
 module.exports = {
     customId: "payment_confirm",
     async execute(interaction, client) {
-        // Defer dulu agar tidak timeout
         await interaction.deferReply({ ephemeral: true });
 
-        // 1. Cek Admin
         if (!config.adminIds.includes(interaction.user.id)) {
             return interaction.editReply({ content: "❌ Admin only." });
         }
 
-        // 2. Ambil Channel Ticket
         const ticketId = interaction.customId.split(":")[1]; 
         const ticket = interaction.guild.channels.cache.get(ticketId) || interaction.channel;
         
         if (!ticket) return interaction.editReply({ content: "Ticket tidak ditemukan." });
 
-        let buyerId = null; // Variabel untuk menyimpan ID Pembeli
+        let buyerId = null;
 
-        // 3. Update Status di Embed Order & Ambil ID Pembeli
+        // --- UPDATE INVOICE STATUS ---
         try {
             const messages = await ticket.messages.fetch({ limit: 50 });
-            const orderMsg = messages.find(m => m.embeds.length && m.embeds[0].title && m.embeds[0].title.includes("ORDER BARU"));
+            const invoiceMsg = messages.find(m => m.embeds.length && m.embeds[0].title && m.embeds[0].title.includes("INVOICE"));
 
-            if (orderMsg) {
-                const updated = EmbedBuilder.from(orderMsg.embeds[0]);
-                const oldDesc = updated.data.description;
+            if (invoiceMsg) {
+                const updated = EmbedBuilder.from(invoiceMsg.embeds[0]);
+                const fields = updated.data.fields;
 
-                // Update Status Teks
-                let newDesc = oldDesc.replace("`MENUNGGU`", "`SUDAH BAYAR`"); 
-                newDesc = newDesc.replace("`MENUNGGU`", "`DALAM PROSES`"); 
-                updated.setDescription(newDesc);
-                
-                await orderMsg.edit({ embeds: [updated] });
+                // 1. Update Status Payment -> LUNAS
+                const payStatus = fields.find(f => f.name.includes("Status Payment"));
+                if (payStatus) payStatus.value = "<a:1370everythingisstable:1455186732306923600> `LUNAS (SUDAH DIBAYAR)`";
 
-                // Ambil ID User dari deskripsi embed
-                const match = oldDesc.match(/\*\*◆ User:\*\* <@(\d+)>/);
-                if (match) {
-                    buyerId = match[1]; 
+                // 2. Update Status Order -> DALAM PROSES
+                const ordStatus = fields.find(f => f.name.includes("Status Order"));
+                if (ordStatus) ordStatus.value = "<:704309pendingids:1455185884549746872> `DALAM PROSES PENGERJAAN`";
+
+                // 3. Ambil ID User dari Field Info Customer
+                const infoField = fields.find(f => f.name.includes("Informasi Customer"));
+                if (infoField) {
+                    const match = infoField.value.match(/Customer:\*\* <@(\d+)>/);
+                    if (match) buyerId = match[1];
                 }
+                
+                await invoiceMsg.edit({ embeds: [updated] });
             }
         } catch (e) {
-            console.log("Gagal update embed order / ambil ID user:", e.message);
+            console.log("Gagal update invoice:", e.message);
         }
 
-        // 4. Kirim Pesan Konfirmasi
+        // Kirim Pesan Konfirmasi & Tombol Login
         const confirmEmbed = new EmbedBuilder()
             .setTitle("<a:8054verifiedicon:1456639271904608337> PEMBAYARAN DITERIMA")
             .setColor("#00FF88")
-            .setDescription("Pembayaran telah diterima.\nSilakan isi data login Roblox dengan tombol di bawah.");
+            .setDescription("pembayaran kamu sudah diterima.\nsilahkan lanjut isi data login di bawah ini.");
 
         const loginRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
@@ -59,24 +60,18 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
         );
 
-        // --- INI BAGIAN YANG DIUBAH MENJADI SIMPEL ---
         const simpleMessage = buyerId 
             ? `<a:707793redbell:1456642921502605435> notifikasi pembayaran <@${buyerId}>` 
             : "<a:707793redbell:1456642921502605435> notifikasi pembayaran";
 
         await ticket.send({ 
-            content: simpleMessage, // <--- Pesan simpel + Mention
+            content: simpleMessage, 
             embeds: [confirmEmbed], 
             components: [loginRow] 
         });
         
-        // 5. Hapus tombol confirm/reject di log channel admin
         if (interaction.message) {
-            try {
-                await interaction.message.edit({ components: [] });
-            } catch (e) {
-                console.log("Gagal hapus tombol log:", e.message);
-            }
+            try { await interaction.message.edit({ components: [] }); } catch (e) {}
         }
         
         return interaction.editReply({ content: "<:verif1:1452333754075840806> Payment dikonfirmasi." });

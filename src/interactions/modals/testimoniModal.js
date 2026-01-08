@@ -28,8 +28,8 @@ module.exports = {
             .setColor("#FFD700") 
             .setThumbnail(interaction.user.displayAvatarURL())
             .setDescription(
-                `💬 **Feedback:**\n"${pesan}"\n\n` +
-                `✨ **Rating:** ${rating}/10\n${star}`
+                `◆ **Feedback:**\n> "${pesan}"\n\n` +
+                `◆ **Rating:** ${rating}/10\n> ${star}`
             )
             .setFooter({ text: "Terima kasih atas kepercayaannya!" })
             .setTimestamp();

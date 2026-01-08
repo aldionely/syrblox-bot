@@ -19,10 +19,8 @@ module.exports = {
         
         if (!product) return interaction.reply({ content: "Produk error/hilang dari database.", ephemeral: true });
 
-        // Ambil Kategori ID dari database
         const categoryId = config.categories.getTicket(interaction.guild.id);
         
-        // Validasi: Pastikan admin sudah setup kategori ticket
         if (!categoryId) {
             return interaction.reply({ 
                 content: "❌ **Sistem Error:** Admin belum melakukan `/setup tipe:Kategori Ticket`. Mohon hubungi admin.", 
@@ -30,13 +28,10 @@ module.exports = {
             });
         }
         
-        // --- [BAGIAN INI YANG DIUBAH] ---
-        // Membuat nama ticket: order-rbx + 4 angka acak
-        const randomNum = Math.floor(1000 + Math.random() * 9000); // Menghasilkan angka antara 1000 - 9999
+        const randomNum = Math.floor(1000 + Math.random() * 9000); 
         const ticketName = `order-rbx${randomNum}`; 
-        // --------------------------------
+        const invoiceId = `INV-${randomNum}`;
 
-        // Buat Ticket
         const ticket = await interaction.guild.channels.create({
             name: ticketName,
             type: ChannelType.GuildText,
@@ -50,47 +45,101 @@ module.exports = {
             ]
         });
 
-        const orderEmbed = new EmbedBuilder()
-            .setTitle("<:704309pendingids:1455185884549746872> ORDER BARU — SYRBLOX")
-            .setColor("#FFD700")
-            .setDescription(
-                `**◆ User:** <@${interaction.user.id}>\n` +
-                `**◆ ID Produk:** ${product.id}\n` +
-                `**◆ Jumlah:** ${product.jumlah} Robux\n` +
-                `**◆ Harga:** Rp ${formatRupiah(product.harga)}\n` +
-                `**◆ Metode Bayar:** ${paymentData.label}\n\n` +
-                `📌 **Status Payment:** \`MENUNGGU\`\n` +
-                `📦 **Status Order:** \`MENUNGGU\``
-            )
-            .setFooter({ text: "© SYRBLOX Order System" });
+        // --- VARIABEL GARIS PEMISAH ---
+        const separator = { name: ' ', value: '─────────────────────────────', inline: false };
 
+        // --- EMBED INVOICE VERTIKAL ---
+        const invoiceEmbed = new EmbedBuilder()
+            .setTitle(`🧾 SYRBLOX - INVOICE`)
+            .setColor("#FFFFFF") 
+            .setDescription(`**No. Invoice:** \`${invoiceId}\`\nsilahkan selesaikan pembayaran agar pembelian dapat diproses.`)
+            .addFields(
+                // BAGIAN 1: INFO CUSTOMER
+                { 
+                    name: '<:CF11:1456662765346230385> **INFORMASI PEMBELIAN**', 
+                    value: `**Username :** <@${interaction.user.id}>\n**Tanggal :** <t:${Math.floor(Date.now() / 1000)}:f>`, 
+                    inline: false 
+                },
+                
+                separator, // Garis
+
+                // BAGIAN 2: RINCIAN PRODUK
+                { 
+                    name: '<:CF11:1456662765346230385> **RINCIAN PEMBELIAN**', 
+                    value: `**Produk :** ${product.id}\n**Jumlah :** ${product.jumlah} Robux\n**Harga :** Rp ${formatRupiah(product.harga)}`, 
+                    inline: false 
+                },
+
+                separator, // Garis
+
+                // BAGIAN 3: TOTAL & METODE
+                { 
+                    name: '<:CF11:1456662765346230385> TOTAL BAYAR', 
+                    value: `**Rp ${formatRupiah(product.harga)}**`, 
+                    inline: false 
+                },
+                { 
+                    name: '<:CF11:1456662765346230385> METODE PEMBAYARAN', 
+                    value: `**${paymentData.label}**`, 
+                    inline: false 
+                },
+
+                separator, // Garis
+
+                // BAGIAN 4: STATUS (DIBUAT TERPISAH)
+                { 
+                    name: '<:CF11:1456662765346230385> Status Payment', 
+                    value: `<a:9366laydowntorest:1455168887833366559>\`MENUNGGU PEMBAYARAN\``, 
+                    inline: false 
+                },
+                { 
+                    name: '<:CF11:1456662765346230385> Status Order', 
+                    value: `<a:9366laydowntorest:1455168887833366559>\`MENUNGGU PROSES\``, 
+                    inline: false 
+                }
+            )
+            .setFooter({ text: "SYRBLOX OFFICAL.", iconURL: interaction.guild.iconURL() })
+            .setTimestamp();
+
+        // --- EMBED DETAIL REKENING ---
         const paymentEmbed = new EmbedBuilder()
-            .setTitle("💳 INFORMASI PEMBAYARAN")
+            .setTitle("💳 INSTRUKSI TRANSFER")
             .setColor("#00BFFF");
 
         if (paymentData.type === "ewallet") {
-            paymentEmbed.setDescription(`**METODE :** ${paymentData.label}\n**NOMOR :** ${paymentData.number}\n**NAMA :** ${paymentData.name}`);
+            paymentEmbed.setDescription(
+                `Silakan transfer ke **${paymentData.label}**:\n` +
+                `## ${paymentData.number}\n` +
+                `**A/N :** ${paymentData.name}\n\n` +
+                `*Mohon transfer sebesar* ***Rp ${formatRupiah(product.harga)}***`
+            );
         } else if (paymentData.type === "bank") {
-            paymentEmbed.setDescription(`**BANK :** ${paymentData.bank}\n**NAMA :** ${paymentData.name}\n**NO REK :** \`\`\`css\n${paymentData.number}\n\`\`\`\n\n silahkan transfer sesuai nominal dan rekening di atas.`);
+            paymentEmbed.setDescription(
+                `Silakan transfer ke **BANK ${paymentData.bank}**:\n` +
+                `# \`\`\`${paymentData.number}\`\`\`\n` +
+                `**A/N :** ${paymentData.name}\n\n` +
+                `*Mohon transfer sebesar* ***Rp ${formatRupiah(product.harga)}***`
+            );
         } else if (paymentData.type === "qris") {
-            paymentEmbed.setDescription(`**METODE :** QRIS\n**NAMA :** ${paymentData.name}\n\nSilakan scan QR di bawah ini`).setImage(paymentData.image);
+            paymentEmbed.setDescription(`**Scan QRIS di bawah ini:**\n**A/N :** ${paymentData.name}`).setImage(paymentData.image);
         }
 
         const uploadRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId("upload_bukti")
-                .setLabel("➡ Sudah bayar? klik disini. ⬅")
-                .setStyle(ButtonStyle.Primary)
+                .setLabel("Konfirmasi Pembayaran")
+                .setStyle(ButtonStyle.Success)
+                .setEmoji("🧾")
         );
 
         await ticket.send({
-            content: `<@${interaction.user.id}>\n` + config.adminIds.map(id => `<@${id}>`).join(" "),
-            embeds: [orderEmbed, paymentEmbed],
+            content: `<@${interaction.user.id}> ` + config.adminIds.map(id => `<@${id}>`).join(" "),
+            embeds: [invoiceEmbed, paymentEmbed],
             components: [uploadRow]
         });
 
         return interaction.update({
-            content: `<a:6521verificationicon:1456639259787133202> Order dibuat, lanjut kesini buat pembayaran: ${ticket}`,
+            content: `<a:6521verificationicon:1456639259787133202> Invoice berhasil dibuat. cek disini: ${ticket}`,
             components: [],
             ephemeral: true
         });

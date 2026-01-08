@@ -8,14 +8,24 @@ module.exports = {
         const password = interaction.fields.getTextInputValue("rbx_password");
 
         const messages = await interaction.channel.messages.fetch({ limit: 50 });
-        const orderMsg = messages.find(m => m.embeds.length && m.embeds[0].title && m.embeds[0].title.includes("ORDER BARU"));
         
-        // [UPDATE] Ambil Channel Log dinamis
+        // Cari Invoice
+        const invoiceMsg = messages.find(m => m.embeds.length && m.embeds[0].title && m.embeds[0].title.includes("INVOICE"));
+        
         const logChannelId = config.getChannel(interaction.guild.id, "orderLog");
         if (!logChannelId) return interaction.reply({ content: "❌ Admin belum setup channel Order Log.", ephemeral: true });
 
         const log = interaction.guild.channels.cache.get(logChannelId);
-        if (!log || !orderMsg) return interaction.reply({ content: "Gagal menemukan channel log / data order.", ephemeral: true});
+        if (!log) return interaction.reply({ content: "Gagal menemukan channel log.", ephemeral: true});
+
+        // Ambil info produk dari Field Invoice
+        let produkInfo = "Data Produk";
+        if (invoiceMsg) {
+            const fields = invoiceMsg.embeds[0].fields;
+            // Ambil Rincian Produk (Field ke-2)
+            const rincian = fields.find(f => f.name.includes("Rincian Produk"));
+            if (rincian) produkInfo = rincian.value;
+        }
 
         const logEmbed = new EmbedBuilder()
             .setTitle("🔐 DATA LOGIN ROBLOX — SYRBLOX")
@@ -23,7 +33,7 @@ module.exports = {
             .setDescription(
                 `👤 **User:** <@${interaction.user.id}>\n` +
                 `📍 **Ticket:** ${interaction.channel}\n\n` +
-                `${orderMsg.embeds[0].data.description}\n\n` +
+                `**DETAIL ORDER:**\n${produkInfo}\n\n` +
                 `**Email:** \`${username}\`\n` +
                 `**Pw Roblox:** \`${password}\``
             );

@@ -29,64 +29,68 @@ module.exports = {
         // 3. Ambil Pesan-pesan di Ticket
         const messages = await ticket.messages.fetch({ limit: 50 });
 
-        // --- FUNGSI HELPER: Bikin Tombol Jadi Disable ---
+        // Helper Disable Tombol
         const disableComponents = (msg) => {
             if (!msg.components.length) return [];
             return msg.components.map(row => {
                 const newRow = ActionRowBuilder.from(row);
-                // Ubah setiap tombol di dalam baris menjadi disabled
                 const newBtns = newRow.components.map(btn => ButtonBuilder.from(btn).setDisabled(true));
                 newRow.setComponents(newBtns);
                 return newRow;
             });
         };
 
-        // A. HAPUS Pesan Loading (Jika ada)
-        const loadingMsg = messages.find(m => m.content && m.content.includes("Robux sedang diproses oleh admin"));
-        if (loadingMsg) {
-            try { await loadingMsg.delete(); } catch (e) {}
-        }
+        // A. Hapus Pesan Loading
+        const loadingMsg = messages.find(m => m.content && m.content.includes("robux sedang di proses"));
+        if (loadingMsg) { try { await loadingMsg.delete(); } catch (e) {} }
 
-        // B. DISABLE Tombol "Isi Data Login"
-        // Kita cari pesan yang punya tombol dengan ID 'fill_roblox_login'
-        const loginMsg = messages.find(m => 
-            m.components.length > 0 && 
-            m.components[0].components.some(c => c.customId === 'fill_roblox_login')
-        );
-        if (loginMsg) {
-            try {
-                await loginMsg.edit({ components: disableComponents(loginMsg) });
-            } catch (e) { console.log("Gagal disable tombol login:", e.message); }
-        }
+        // B. Disable Tombol Login
+        const loginMsg = messages.find(m => m.components.length > 0 && m.components[0].components.some(c => c.customId === 'fill_roblox_login'));
+        if (loginMsg) { try { await loginMsg.edit({ components: disableComponents(loginMsg) }); } catch (e) {} }
 
-        // C. DISABLE Tombol "Sudah Bayar?" (Order Msg) & UPDATE Status Embed
-        const orderMsg = messages.find(m => m.embeds.length && m.embeds[0].title && m.embeds[0].title.includes("ORDER BARU"));
+        // C. UPDATE INVOICE & AMBIL DATA (PERBAIKAN DISINI)
+        const invoiceMsg = messages.find(m => m.embeds.length && m.embeds[0].title && m.embeds[0].title.includes("INVOICE"));
 
         let jumlahRobux = "Sekian";
         let buyerId = null;
 
-        if (orderMsg) {
-            const updated = EmbedBuilder.from(orderMsg.embeds[0]);
-            let desc = updated.data.description;
-            desc = desc.replace("`DALAM PROSES`", "`SELESAI`");
-            desc = desc.replace("`MENUNGGU`", "`SELESAI`"); 
-            updated.setDescription(desc);
+        if (invoiceMsg) {
+            const updated = EmbedBuilder.from(invoiceMsg.embeds[0]);
+            const fields = updated.data.fields;
+
+            // 1. Update Status Order -> SELESAI
+            const ordStatus = fields.find(f => f.name.includes("Status Order"));
+            if (ordStatus) ordStatus.value = "`✅ ORDER SELESAI`";
             
-            // Simpan Embed Baru + Disable Tombol "Sudah Bayar?"
-            await orderMsg.edit({ 
+            // 2. Ambil ID User (SESUAI FORMAT BARU)
+            // Format di embed: "**Username :** <@123456789>"
+            const infoField = fields.find(f => f.name.includes("INFORMASI PEMBELIAN"));
+            if (infoField) {
+                const match = infoField.value.match(/Username :\*\* <@(\d+)>/);
+                if (match) buyerId = match[1];
+            }
+
+            // 3. Ambil Jumlah Robux (SESUAI FORMAT BARU)
+            // Format di embed: "**Jumlah :** 100 Robux"
+            const prodField = fields.find(f => f.name.includes("RINCIAN PEMBELIAN"));
+            if (prodField) {
+                const matchRobux = prodField.value.match(/Jumlah :\*\* (\d+) Robux/);
+                if (matchRobux) jumlahRobux = matchRobux[1];
+            }
+
+            // Simpan perubahan
+            await invoiceMsg.edit({ 
                 embeds: [updated], 
-                components: disableComponents(orderMsg) // <-- Tombol jadi mati
+                components: disableComponents(invoiceMsg) 
             });
-
-            const matchRobux = desc.match(/\*\*◆ Jumlah:\*\* (.+?) Robux/);
-            if (matchRobux) jumlahRobux = matchRobux[1];
-
-            const matchUser = desc.match(/\*\*◆ User:\*\* <@(.+?)>/);
-            if (matchUser) buyerId = matchUser[1];
         }
 
-        // 4. [UPDATE] Kirim ke Channel History Dinamis
+        // 4. Kirim History (Sekarang pasti jalan karena buyerId sudah benar)
         const historyId = config.getChannel(interaction.guild.id, "history");
+        
+        // Debugging (Opsional, cek console kalau masih gagal)
+        // console.log("History ID:", historyId, "Buyer ID:", buyerId);
+
         if (historyId && buyerId) {
             const historyChannel = interaction.guild.channels.cache.get(historyId);
             if (historyChannel) {
@@ -129,11 +133,11 @@ module.exports = {
                 `Halo ${buyerMention}, robux dengan jumlah ${jumlahRobux} udah berhasil kami kirim!\n\n` +
                 `segera cek akun kamu ya!\n\n` +
                 `**NOTE**\n\n` +
-                `◆ Ticket order ini akan dihapus otomatis dalam **7 hari**.\n\n` +
-                `◆ semua data login kamu juga akan di hapus dari sistem kami demi keamanan kamu.\n\n` +
-                `**jika berkenan isi testimoni dengan klik tombol di bawah ya!** 👇\n`
+                `◆ Ticket order ini akan dihapus otomatis dalam **7 hari**.\n` +
+                `◆ Data login akan dihapus dari sistem kami.\n\n` +
+                `**Jika berkenan isi testimoni dengan klik tombol di bawah ya!** 👇`
             )
-            .setFooter({ text: "SYRBLOX OFFICAL" });
+            .setFooter({ text: "SYRBLOX OFFICIAL" });
 
         await ticket.send({
             content: buyerMention ? `Hore! ${buyerMention} pesananmu udah selesai!` : "Order Selesai!",
