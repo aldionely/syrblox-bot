@@ -11,6 +11,18 @@ const formatRupiah = (n) => new Intl.NumberFormat("id-ID").format(n);
 module.exports = {
     customId: "select_payment",
     async execute(interaction, client) {
+        // --- [SECURITY CHECK: BLACKLIST] ---
+        // Cek apakah user ada di database blacklist
+        const blacklistData = db.prepare("SELECT * FROM blacklist WHERE user_id = ?").get(interaction.user.id);
+        
+        if (blacklistData) {
+            return interaction.reply({ 
+                content: `⛔ **AKSES DITOLAK!**\nMaaf, kamu tidak dapat membuat order karena telah di-blacklist dari sistem kami.\n\n**Alasan:** ${blacklistData.reason}`, 
+                ephemeral: true 
+            });
+        }
+        // -----------------------------------
+
         const productId = interaction.customId.split(":")[1];
         const paymentKey = interaction.values[0];
         const paymentData = paymentMethods[paymentKey];
@@ -32,6 +44,10 @@ module.exports = {
         const ticketName = `order-rbx${randomNum}`; 
         const invoiceId = `INV-${randomNum}`;
 
+        // Generate Kode Unik
+        const uniqueCode = Math.floor(Math.random() * 99) + 1; 
+        const totalBayar = product.harga + uniqueCode;
+
         const ticket = await interaction.guild.channels.create({
             name: ticketName,
             type: ChannelType.GuildText,
@@ -45,10 +61,9 @@ module.exports = {
             ]
         });
 
-        // --- VARIABEL GARIS PEMISAH ---
+        // --- SETUP EMBED INVOICE ---
         const separator = { name: ' ', value: '─────────────────────────────', inline: false };
 
-        // --- EMBED INVOICE VERTIKAL ---
         const invoiceEmbed = new EmbedBuilder()
             .setTitle(`🧾 SYRBLOX - INVOICE`)
             .setColor("#FFFFFF") 
@@ -60,22 +75,18 @@ module.exports = {
                     value: `**Username :** <@${interaction.user.id}>\n**Tanggal :** <t:${Math.floor(Date.now() / 1000)}:f>`, 
                     inline: false 
                 },
-                
-                separator, // Garis
-
+                separator,
                 // BAGIAN 2: RINCIAN PRODUK
                 { 
                     name: '<:CF11:1456662765346230385> **RINCIAN PEMBELIAN**', 
-                    value: `**Produk :** ${product.id}\n**Jumlah :** ${product.jumlah} Robux\n**Harga :** Rp ${formatRupiah(product.harga)}`, 
+                    value: `**Produk :** ${product.id}\n**Jumlah :** ${product.jumlah} Robux\n**Harga Awal :** Rp ${formatRupiah(product.harga)}\n**Kode Unik :** Rp ${uniqueCode}`, 
                     inline: false 
                 },
-
-                separator, // Garis
-
+                separator,
                 // BAGIAN 3: TOTAL & METODE
                 { 
                     name: '<:CF11:1456662765346230385> TOTAL BAYAR', 
-                    value: `**Rp ${formatRupiah(product.harga)}**`, 
+                    value: `**Rp ${formatRupiah(totalBayar)}**\n*(Mohon transfer nominal ini persis)*`, 
                     inline: false 
                 },
                 { 
@@ -83,10 +94,8 @@ module.exports = {
                     value: `**${paymentData.label}**`, 
                     inline: false 
                 },
-
-                separator, // Garis
-
-                // BAGIAN 4: STATUS (DIBUAT TERPISAH)
+                separator,
+                // BAGIAN 4: STATUS
                 { 
                     name: '<:CF11:1456662765346230385> Status Payment', 
                     value: `<a:9366laydowntorest:1455168887833366559>\`MENUNGGU PEMBAYARAN\``, 
@@ -101,7 +110,6 @@ module.exports = {
             .setFooter({ text: "SYRBLOX OFFICAL.", iconURL: interaction.guild.iconURL() })
             .setTimestamp();
 
-        // --- EMBED DETAIL REKENING ---
         const paymentEmbed = new EmbedBuilder()
             .setTitle("💳 INSTRUKSI TRANSFER")
             .setColor("#00BFFF");
@@ -111,17 +119,17 @@ module.exports = {
                 `Silakan transfer ke **${paymentData.label}**:\n` +
                 `## ${paymentData.number}\n` +
                 `**A/N :** ${paymentData.name}\n\n` +
-                `*Mohon transfer sebesar* ***Rp ${formatRupiah(product.harga)}***`
+                `*Mohon transfer sebesar **Rp ${formatRupiah(totalBayar)}** (sesuai total).*`
             );
         } else if (paymentData.type === "bank") {
             paymentEmbed.setDescription(
                 `Silakan transfer ke **BANK ${paymentData.bank}**:\n` +
                 `# \`\`\`${paymentData.number}\`\`\`\n` +
                 `**A/N :** ${paymentData.name}\n\n` +
-                `*Mohon transfer sebesar* ***Rp ${formatRupiah(product.harga)}***`
+                `*Mohon transfer sebesar **Rp ${formatRupiah(totalBayar)}** (sesuai total).*`
             );
         } else if (paymentData.type === "qris") {
-            paymentEmbed.setDescription(`**Scan QRIS di bawah ini:**\n**A/N :** ${paymentData.name}`).setImage(paymentData.image);
+            paymentEmbed.setDescription(`**Scan QRIS di bawah ini:**\n**A/N :** ${paymentData.name}\n*Total Bayar: Rp ${formatRupiah(totalBayar)}*`).setImage(paymentData.image);
         }
 
         const uploadRow = new ActionRowBuilder().addComponents(
@@ -129,7 +137,13 @@ module.exports = {
                 .setCustomId("upload_bukti")
                 .setLabel("Konfirmasi Pembayaran")
                 .setStyle(ButtonStyle.Success)
-                .setEmoji("🧾")
+                .setEmoji("🧾"),
+            
+            new ButtonBuilder()
+                .setCustomId("cancel_order")
+                .setLabel("Batalkan Order")
+                .setStyle(ButtonStyle.Danger)
+                .setEmoji("🗑️")
         );
 
         await ticket.send({
