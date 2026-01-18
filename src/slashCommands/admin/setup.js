@@ -16,17 +16,17 @@ module.exports = {
                .setRequired(true)
                .addChoices(
                    // --- DAFTAR OPSI SETUP ---
-                   { name: 'Channel Order (Tombol Beli)', value: 'order' }, 
-                   { name: 'Channel Pricelist', value: 'pricelist' },
-                   { name: 'Channel Broadcast (Pengumuman)', value: 'broadcast' },
+                   { name: 'Order Channel', value: 'order' }, 
+                   { name: 'Pricelist Channel', value: 'pricelist' },
+                   { name: 'Broadcast Channel', value: 'broadcast' },
                    // OPSI BARU (ERROR LOGS) 👇
-                   { name: 'System Error Log (Anti-Crash)', value: 'errorLog' },
+                   { name: 'Error Log', value: 'errorLog' },
                    
-                   { name: 'Log Payment (Bukti Bayar)', value: 'logPayment' },
-                   { name: 'Order Log (Data Login)', value: 'orderLog' },
-                   { name: 'History (Public)', value: 'history' },
-                   { name: 'Testimoni (Public)', value: 'testimoni' },
-                   { name: 'Kategori Ticket (Folder)', value: 'ticketCategory' }
+                   { name: 'Payment Log', value: 'logPayment' },
+                   { name: 'Order Log', value: 'orderLog' },
+                   { name: 'History Log', value: 'history' },
+                   { name: 'Testimoni Channel', value: 'testimoni' },
+                   { name: 'Kategori Ticket', value: 'ticketCategory' }
                )
         )
         .addChannelOption(opt => 

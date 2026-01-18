@@ -1,4 +1,5 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } = require("discord.js");
+const discordTranscripts = require('discord-html-transcripts'); // Import Library Baru
 const config = require("../../config");
 
 module.exports = {
@@ -8,9 +9,10 @@ module.exports = {
             return interaction.reply({ content: "❌ Admin only.", ephemeral: true });
         }
 
-        await interaction.deferUpdate();
+        // Defer reply karena proses transcript mungkin butuh 1-3 detik
+        await interaction.deferReply({ ephemeral: true }); 
 
-        // 1. Update Log Message (Di Channel Log)
+        // 1. Update Log Message (Di Channel Log) - Ubah status jadi SELESAI
         try {
             const logEmbed = EmbedBuilder.from(interaction.message.embeds[0]);
             logEmbed.setDescription(
@@ -24,9 +26,36 @@ module.exports = {
         // 2. Ambil Ticket
         const ticketId = interaction.customId.split(":")[1];
         const ticket = interaction.guild.channels.cache.get(ticketId);
-        if (!ticket) return;
+        if (!ticket) return interaction.editReply("❌ Ticket tidak ditemukan (mungkin sudah dihapus).");
 
-        // 3. Ambil Pesan-pesan di Ticket
+        // --- FITUR TRANSCRIPT (BARU) ---
+        // Buat file transcript HTML
+        const attachment = await discordTranscripts.createTranscript(ticket, {
+            limit: -1, // Ambil semua pesan
+            returnType: 'attachment', // Balikkan sebagai file attachment
+            filename: `transcript-${ticket.name}.html`, // Nama file
+            saveImages: true, // Simpan gambar agar tidak hilang
+            footerText: "Exported by Syrblox Bot", 
+            poweredBy: false // Hilangkan watermark library
+        });
+
+        // Kirim Transcript ke Channel Log (orderLog)
+        const logId = config.getChannel(interaction.guild.id, "orderLog");
+        if (logId) {
+            const logChannel = interaction.guild.channels.cache.get(logId);
+            if (logChannel) {
+                const transEmbed = new EmbedBuilder()
+                    .setTitle("📑 TICKET TRANSCRIPT")
+                    .setColor("#2b2d31")
+                    .setDescription(`**Channel:** ${ticket.name}\n**Closed By:** <@${interaction.user.id}>\n**Time:** <t:${Math.floor(Date.now() / 1000)}:R>`)
+                    .setFooter({ text: "Download file di atas untuk melihat riwayat chat." });
+
+                await logChannel.send({ embeds: [transEmbed], files: [attachment] });
+            }
+        }
+        // --------------------------------
+
+        // 3. Ambil Pesan-pesan di Ticket (Untuk Logic Invoice)
         const messages = await ticket.messages.fetch({ limit: 50 });
 
         // Helper Disable Tombol
@@ -48,7 +77,7 @@ module.exports = {
         const loginMsg = messages.find(m => m.components.length > 0 && m.components[0].components.some(c => c.customId === 'fill_roblox_login'));
         if (loginMsg) { try { await loginMsg.edit({ components: disableComponents(loginMsg) }); } catch (e) {} }
 
-        // C. UPDATE INVOICE & AMBIL DATA (PERBAIKAN DISINI)
+        // C. UPDATE INVOICE & AMBIL DATA (Logika Invoice Baru)
         const invoiceMsg = messages.find(m => m.embeds.length && m.embeds[0].title && m.embeds[0].title.includes("INVOICE"));
 
         let jumlahRobux = "Sekian";
@@ -60,37 +89,30 @@ module.exports = {
 
             // 1. Update Status Order -> SELESAI
             const ordStatus = fields.find(f => f.name.includes("Status Order"));
-            if (ordStatus) ordStatus.value = "`✅ ORDER SELESAI`";
+            if (ordStatus) ordStatus.value = "✅ `ORDER SELESAI`";
             
-            // 2. Ambil ID User (SESUAI FORMAT BARU)
-            // Format di embed: "**Username :** <@123456789>"
+            // 2. Ambil ID User
             const infoField = fields.find(f => f.name.includes("INFORMASI PEMBELIAN"));
             if (infoField) {
                 const match = infoField.value.match(/Username :\*\* <@(\d+)>/);
                 if (match) buyerId = match[1];
             }
 
-            // 3. Ambil Jumlah Robux (SESUAI FORMAT BARU)
-            // Format di embed: "**Jumlah :** 100 Robux"
+            // 3. Ambil Jumlah Robux
             const prodField = fields.find(f => f.name.includes("RINCIAN PEMBELIAN"));
             if (prodField) {
                 const matchRobux = prodField.value.match(/Jumlah :\*\* (\d+) Robux/);
                 if (matchRobux) jumlahRobux = matchRobux[1];
             }
 
-            // Simpan perubahan
             await invoiceMsg.edit({ 
                 embeds: [updated], 
                 components: disableComponents(invoiceMsg) 
             });
         }
 
-        // 4. Kirim History (Sekarang pasti jalan karena buyerId sudah benar)
+        // 4. Kirim History
         const historyId = config.getChannel(interaction.guild.id, "history");
-        
-        // Debugging (Opsional, cek console kalau masih gagal)
-        // console.log("History ID:", historyId, "Buyer ID:", buyerId);
-
         if (historyId && buyerId) {
             const historyChannel = interaction.guild.channels.cache.get(historyId);
             if (historyChannel) {
@@ -132,9 +154,9 @@ module.exports = {
             .setDescription(
                 `Halo ${buyerMention}, robux dengan jumlah ${jumlahRobux} udah berhasil kami kirim!\n\n` +
                 `segera cek akun kamu ya!\n\n` +
-                `**NOTE**\n\n` +
+                `**NOTE**\n` +
                 `◆ Ticket order ini akan dihapus otomatis dalam **7 hari**.\n` +
-                `◆ Data login akan dihapus dari sistem kami.\n\n` +
+                `◆ Data login akan dihapus dari sistem kami.\n` +
                 `**Jika berkenan isi testimoni dengan klik tombol di bawah ya!** 👇`
             )
             .setFooter({ text: "SYRBLOX OFFICIAL" });
@@ -144,5 +166,8 @@ module.exports = {
             embeds: [finishEmbed],
             components: [testimoniRow]
         });
+
+        // Balas interaksi tombol (karena tadi di-defer)
+        await interaction.editReply({ content: "✅ Order diselesaikan & Transcript tersimpan." });
     }
 };
