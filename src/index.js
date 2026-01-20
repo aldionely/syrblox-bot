@@ -27,4 +27,6 @@ require("./handlers/slashHandler")(client);       // Handle / (BARU)
 require("./handlers/interactionHandler")(client); // Handle Button
 require("./handlers/eventHandler")(client);       // Handle Event
 
+require("./utils/flashSaleManager")(client);
+
 client.login(process.env.BOT_TOKEN);

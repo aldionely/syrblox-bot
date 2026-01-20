@@ -1,5 +1,6 @@
 const { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const config = require("../config");
+const verifySessions = require("../utils/verifySession");
 
 module.exports = {
     name: "messageCreate",
@@ -7,6 +8,52 @@ module.exports = {
         // 1. Filter Dasar
         if (message.author.bot) return;
         if (!message.guild) return;
+
+        // ---------------------------------------------------------
+        // HANDLE VERIFIKASI CAPTCHA (Cek Jawaban)
+        // ---------------------------------------------------------
+        // =========================================================
+        // [LOGIKA BARU] CEK JAWABAN VERIFIKASI (Tanpa Prefix)
+        // =========================================================
+        if (verifySessions.has(message.author.id)) {
+            const session = verifySessions.get(message.author.id);
+
+            // Cek apakah dia mengetik di channel yang benar
+            if (message.channel.id === session.channelId) {
+                
+                // Hapus pesan user (angka yang diketik) biar rapi
+                setTimeout(() => message.delete().catch(() => {}), 500);
+
+                if (message.content.trim() === session.code) {
+                    // --- JAWABAN BENAR ---
+                    verifySessions.delete(message.author.id);
+
+                    try {
+                        const member = message.member;
+
+                        // 1. Hapus Role Unverified (Jika ada)
+                        if (config.unverifiedRole && member.roles.cache.has(config.unverifiedRole)) {
+                            await member.roles.remove(config.unverifiedRole);
+                        }
+
+                        // 2. Tambah Role Verified
+                        if (config.verifiedRole) {
+                            await member.roles.add(config.verifiedRole);
+                            
+                            const successMsg = await message.channel.send(`✅ **verifikasi berhasil!** Selamat datang <@${message.author.id}>.`);
+                            // setTimeout(() => successMsg.delete().catch(() => {}), 5000);
+                        } else {
+                            message.channel.send("✅ Kode benar! (Tapi role belum disetup di config).");
+                        }
+
+                    } catch (e) {
+                        console.error(e);
+                        message.channel.send("❌ Gagal memberi role. Cek posisi role bot!");
+                    }
+                    return; // STOP! Jangan lanjut ke bawah
+                }
+            }
+        }
 
         // ---------------------------------------------------------
         // HANDLE COMMAND BIASA (Prefix !)

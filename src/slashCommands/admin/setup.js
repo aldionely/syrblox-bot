@@ -1,8 +1,6 @@
 const { SlashCommandBuilder, ChannelType } = require("discord.js");
 const db = require("../../database/db");
 const config = require("../../config");
-
-// IMPORT UTILITY UPDATE
 const updatePricelist = require("../../utils/updatePricelist");
 const updateOrder = require("../../utils/updateOrder");
 
@@ -15,18 +13,17 @@ module.exports = {
                .setDescription("Tipe Konfigurasi")
                .setRequired(true)
                .addChoices(
-                   // --- DAFTAR OPSI SETUP ---
-                   { name: 'Order Channel', value: 'order' }, 
-                   { name: 'Pricelist Channel', value: 'pricelist' },
-                   { name: 'Broadcast Channel', value: 'broadcast' },
-                   // OPSI BARU (ERROR LOGS) 👇
-                   { name: 'Error Log', value: 'errorLog' },
-                   
-                   { name: 'Payment Log', value: 'logPayment' },
-                   { name: 'Order Log', value: 'orderLog' },
-                   { name: 'History Log', value: 'history' },
-                   { name: 'Testimoni Channel', value: 'testimoni' },
-                   { name: 'Kategori Ticket', value: 'ticketCategory' }
+                   { name: 'Channel Order (Tombol Beli)', value: 'order' }, 
+                   { name: 'Channel Pricelist', value: 'pricelist' },
+                   { name: 'Channel Broadcast (Pengumuman Umum)', value: 'broadcast' },
+                   { name: 'Channel Verifikasi', value: 'verify' },
+                   { name: 'Channel Flash Sale (Event)', value: 'flashsale' }, // <--- OPSI BARU
+                   { name: 'System Error Log (Anti-Crash)', value: 'errorLog' },
+                   { name: 'Log Payment (Bukti Bayar)', value: 'logPayment' },
+                   { name: 'Order Log (Data Login)', value: 'orderLog' },
+                   { name: 'History (Public)', value: 'history' },
+                   { name: 'Testimoni (Public)', value: 'testimoni' },
+                   { name: 'Kategori Ticket (Folder)', value: 'ticketCategory' }
                )
         )
         .addChannelOption(opt => 
@@ -44,7 +41,6 @@ module.exports = {
         const channel = interaction.options.getChannel("channel");
         const guildId = interaction.guild.id;
 
-        // Validasi Kategori vs Text Channel
         if (tipe === 'ticketCategory' && channel.type !== ChannelType.GuildCategory) {
             return interaction.reply({ content: "❌ Untuk 'Kategori Ticket', pilih Kategori (Folder).", ephemeral: true });
         }
@@ -52,25 +48,16 @@ module.exports = {
              return interaction.reply({ content: "❌ Untuk opsi ini, pilih Text Channel biasa.", ephemeral: true });
         }
 
-        // Simpan ke Database
         db.prepare("INSERT OR REPLACE INTO configs (guild_id, key, value) VALUES (?, ?, ?)")
           .run(guildId, tipe, channel.id);
 
         let responseText = `✅ **${tipe}** berhasil diset ke **${channel.name}**.`;
 
-        // Trigger Update Embed
         if (tipe === 'pricelist') {
-            try {
-                await updatePricelist(interaction.guild);
-                responseText += "\n📦 **Embed Pricelist** sedang dikirim/diupdate...";
-            } catch (e) { console.error(e); }
+            try { await updatePricelist(interaction.guild); responseText += "\n📦 Embed Pricelist updated."; } catch (e) {}
         }
-
         if (tipe === 'order') {
-            try {
-                await updateOrder(interaction.guild);
-                responseText += "\n🛒 **Embed Order** sedang dikirim/diupdate...";
-            } catch (e) { console.error(e); }
+            try { await updateOrder(interaction.guild); responseText += "\n🛒 Embed Order updated."; } catch (e) {}
         }
 
         return interaction.reply(responseText);

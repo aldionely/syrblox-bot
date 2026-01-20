@@ -22,7 +22,7 @@ module.exports = () => {
             `**Jumlah** : ${p.jumlah} <:robux2:1452335891950604330>\n` +
             `**Harga** : Rp ${formatRupiah(p.harga)}\n` +
             `**Status** : ${p.status.toUpperCase()}`
-        ).join("\n**—————————————————**\n")
+        ).join("\n\n**—————————————————**\n\n")
     );
 
     return embed;
